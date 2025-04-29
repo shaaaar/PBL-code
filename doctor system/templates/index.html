@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor Appointment System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .appointment-form {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .appointment-list {
+            background: #f0f8ff;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        input, button {
+            padding: 8px;
+            margin: 5px 0;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .slot {
+            display: inline-block;
+            width: 100px;
+            padding: 10px;
+            margin: 5px;
+            background: #ddd;
+            text-align: center;
+            border-radius: 4px;
+        }
+        .occupied {
+            background: #ff9999;
+        }
+        .available {
+            background: #99ff99;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Doctor Appointment System</h1>
+        
+        <div class="appointment-form">
+            <h2>Book an Appointment</h2>
+            <input type="text" id="patient_id" placeholder="Enter Patient ID">
+            <button onclick="bookAppointment()">Book Appointment</button>
+            <p id="message"></p>
+        </div>
+        
+        <div class="appointment-list">
+            <h2>Current Appointments</h2>
+            <div id="slots-container"></div>
+            <button onclick="refreshAppointments()">Refresh Status</button>
+        </div>
+    </div>
+
+    <script>
+        function bookAppointment() {
+            const patientId = document.getElementById('patient_id').value;
+            if (!patientId) {
+                document.getElementById('message').textContent = "Please enter a Patient ID";
+                return;
+            }
+
+            fetch('/book_appointment', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `patient_id=${patientId}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('message').textContent = data.message || data.error;
+                if (!data.error) {
+                    refreshAppointments();
+                }
+            });
+        }
+
+        function refreshAppointments() {
+            fetch('/get_appointments')
+            .then(response => response.json())
+            .then(data => {
+                const container = document.getElementById('slots-container');
+                container.innerHTML = '';
+                
+                data.appointments.forEach((patient, index) => {
+                    const slot = document.createElement('div');
+                    slot.className = `slot ${patient ? 'occupied' : 'available'}`;
+                    slot.textContent = patient ? `Slot ${index+1}: Patient ${patient}` : `Slot ${index+1}: Available`;
+                    container.appendChild(slot);
+                });
+            });
+        }
+
+        // Refresh appointments every 3 seconds
+        setInterval(refreshAppointments, 3000);
+        // Initial load
+        refreshAppointments();
+    </script>
+</body>
+</html>
